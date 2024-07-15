@@ -1,11 +1,22 @@
 import asyncio
+import time
+import random
 from bleak import BleakClient, discover
 import glob
 import os
 from struct import pack
 import subprocess
 
-casted = False
+def lucky():
+    return random.randint(1, 20) == 0
+
+class GlobalState:
+    def __init__(self):
+        self.globalTimer = time.time()
+        self.step = "not_costumed"
+        self.totalCharges = 0
+
+globalState = GlobalState()
 
 # UUID
 CORE_INDICATE_UUID = ('72c90005-57a9-4d40-b746-534e22ec9f9e')
@@ -24,16 +35,73 @@ def on_receive_notify(sender, data: bytearray):
     message_type = data[MESSAGE_TYPE_INDEX]
     event_type = data[EVENT_TYPE_INDEX]
     if event_type == 3:
-        global totalCharges
-        totalCharges += 1
-        print("charge %d!" % totalCharges)
         if data[2] == 3:
-            playSound("cast.wav")
-            global casted
-            casted = True
+            cast()
+        else:
+            charge()
+
+def cast():
+    if globalState.step == "ready":
+        loop = asyncio.get_event_loop()
+        loop.create_task(cast1hit())
+    if globalState.step == "ready2":
+        loop = asyncio.get_event_loop()
+        loop.create_task(cast2hit())
+
+async def cast1hit():
+    globalState.step = "wait"
+    playSound("cast_hit1.wav")
+    await asyncio.sleep(7)
+    globalState.step = "ready2"
+    globalState.totalCharges = 0
+
+async def cast2hit():
+    globalState.step = "wait"
+    playSound("cast_hit2.wav")
+    await asyncio.sleep(6)
+    if lucky():
+        playSound("monster_defeat_blooper.wav")
+    else:
+        playSound("monster_defeat1.wav")
+    await asyncio.sleep(7)
+    if lucky():
+        playSound("girl_win1_blooper.wav")
+    else:
+        playSound("girl_win2.wav")
+    await asyncio.sleep(15)
+    globalState.step = "end"
+
+def charge():
+    if globalState.step == "costumed" or globalState.step == "wait":
+        return
+    globalState.totalCharges += 1
+    if globalState.step == "ready" and globalState.totalCharges == 1:
+        playSound("ready.wav")
+    if globalState.step == "ready2" and globalState.totalCharges == 1:
+        playSound("ready.wav")
+    print("Charge %d!" % globalState.totalCharges)
+    if globalState.step == "not_costumed" and globalState.totalCharges >= 10:
+        globalState.step = "costumed"
+        globalState.totalCharges = 0
+        loop = asyncio.get_event_loop()
+        loop.create_task(costumedSound())
+
+async def costumedSound():
+    globalState.step = "wait"
+    playSound("start2.ogg")
+    await asyncio.sleep(4)
+    playSound("girl_intro2.wav")
+    await asyncio.sleep(8)
+    globalState.step = "ready"
+
 
 def on_receive_indicate(sender, data: bytearray):
     print("on_receive_indicate")
+
+async def introSound():
+    playSound("monster_intro1.wav")
+    await asyncio.sleep(10)
+    playSound("girl_intro1.wav")
 
 async def scan(prefix='MESH-100'):
     while True:
@@ -44,9 +112,13 @@ async def scan(prefix='MESH-100'):
             continue
 
 async def main():
+    # intro sound
+    loop = asyncio.get_event_loop()
+    loop.create_task(introSound())
     # Scan device
     device = await scan('MESH-100AC')
     print('found', device.name, device.address)
+
 
     # Connect device
     async with BleakClient(device, timeout=None) as client:
@@ -55,9 +127,11 @@ async def main():
         await client.start_notify(CORE_INDICATE_UUID, on_receive_indicate)
         await client.write_gatt_char(CORE_WRITE_UUID, pack('<BBBB', 0, 2, 1, 3), response=True)
         print('connected')
-        onConnected()
 
-        await asyncio.sleep(300)
+        while(True):
+            await asyncio.sleep(1)
+            if globalState.step == "end":
+                break
 
         # Finish
 
@@ -66,7 +140,7 @@ def playSound(name):
     subprocess.run(["lamp.exe", name])
 
 def onConnected():
-    playSound("charge.wav")
+    pass
 
 # Initialize event loop
 if __name__ == '__main__':
