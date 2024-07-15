@@ -77,10 +77,14 @@ async def cast2hit():
     await asyncio.sleep(7)
     if lucky():
         playSound("girl_win1_blooper.wav")
-        await asyncio.sleep(7)
+        await asyncio.sleep(15)
+        playSound("outro.wav")
+        await asyncio.sleep(21)
     else:
         playSound("girl_win2.wav")
-        await asyncio.sleep(15)
+        await asyncio.sleep(7)
+        playSound("outro.wav")
+        await asyncio.sleep(21)
     globalState.step = "end"
 
 def charge():
