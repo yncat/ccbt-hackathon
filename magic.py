@@ -8,7 +8,7 @@ from struct import pack
 import subprocess
 
 def lucky():
-    return random.randint(1, 20) == 0
+    return random.randint(1, 20) == 1
 
 class GlobalState:
     def __init__(self):
