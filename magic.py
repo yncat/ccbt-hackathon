@@ -12,9 +12,17 @@ def lucky():
 
 class GlobalState:
     def __init__(self):
-        self.globalTimer = time.time()
+        self.timer = time.time()
         self.step = "not_costumed"
         self.totalCharges = 0
+        self.lives = 3
+
+    def timerRestart(self):
+        self.timer = time.time()
+
+    def timerElapsed(self):
+        return time.time() - self.timer
+
 
 globalState = GlobalState()
 
@@ -80,7 +88,7 @@ def charge():
     if globalState.step == "ready2" and globalState.totalCharges == 1:
         playSound("ready.wav")
     print("Charge %d!" % globalState.totalCharges)
-    if globalState.step == "not_costumed" and globalState.totalCharges >= 10:
+    if globalState.step == "not_costumed" and globalState.totalCharges >= 5:
         globalState.step = "costumed"
         globalState.totalCharges = 0
         loop = asyncio.get_event_loop()
@@ -119,7 +127,6 @@ async def main():
     device = await scan('MESH-100AC')
     print('found', device.name, device.address)
 
-
     # Connect device
     async with BleakClient(device, timeout=None) as client:
         # Initialize
@@ -130,10 +137,38 @@ async def main():
 
         while(True):
             await asyncio.sleep(1)
+            if globalState.step == "ready" or globalState.step == "ready2":
+                attackCheck()
             if globalState.step == "end":
                 break
 
         # Finish
+
+def attackCheck():
+    if globalState.timerElapsed() > 10:
+        loop = asyncio.get_event_loop()
+        loop.create_task(attack())
+
+async def attack():
+    prevStep = globalState.step
+    globalState.step = "wait"
+    playSound("sleep_hit.wav")
+    await asyncio.sleep(3)
+    globalState.lives -= 1
+    if globalState.lives == 0:
+        playSound("girl_defeat1.wav")
+        await asyncio.sleep(5)
+        globalState.step = "end"
+    elif globalState.lives == 1:
+        playSound("girl_hit2.wav")
+        await asyncio.sleep(3)
+        globalState.step = prevStep
+    elif globalState.lives == 2:
+        playSound("girl_hit1.wav")
+        await asyncio.sleep(4)
+        globalState.step = prevStep
+    globalState.timerRestart()
+
 
 def playSound(name):
     name = os.path.join(os.getcwd(), "fx", name)
