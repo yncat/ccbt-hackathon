@@ -14,6 +14,7 @@ class GlobalState:
     def __init__(self):
         self.timer = time.time()
         self.step = "not_costumed"
+        self.attacking = False
         self.totalCharges = 0
         self.lives = 3
 
@@ -50,6 +51,7 @@ def on_receive_notify(sender, data: bytearray):
 
 def cast():
     if globalState.step == "ready":
+        globalState.attacking = False
         loop = asyncio.get_event_loop()
         loop.create_task(cast1hit())
     if globalState.step == "ready2":
@@ -62,6 +64,7 @@ async def cast1hit():
     await asyncio.sleep(7)
     globalState.step = "ready2"
     globalState.totalCharges = 0
+    globalState.timerRestart()
 
 async def cast2hit():
     globalState.step = "wait"
@@ -74,9 +77,10 @@ async def cast2hit():
     await asyncio.sleep(7)
     if lucky():
         playSound("girl_win1_blooper.wav")
+        await asyncio.sleep(7)
     else:
         playSound("girl_win2.wav")
-    await asyncio.sleep(15)
+        await asyncio.sleep(15)
     globalState.step = "end"
 
 def charge():
@@ -139,6 +143,8 @@ async def main():
             await asyncio.sleep(1)
             if globalState.step == "ready" or globalState.step == "ready2":
                 attackCheck()
+            if globalState.attacking and globalState.timerElapsed() >= 1:
+                loop.create_task(attackHit())
             if globalState.step == "end":
                 break
 
@@ -150,8 +156,14 @@ def attackCheck():
         loop.create_task(attack())
 
 async def attack():
+    playSound("sleep_shoot.wav")
+    globalState.timerRestart()
+    globalState.attacking = True
+
+async def attackHit():
     prevStep = globalState.step
     globalState.step = "wait"
+    globalState.attacking = False
     playSound("sleep_hit.wav")
     await asyncio.sleep(3)
     globalState.lives -= 1
