@@ -104,10 +104,8 @@ def charge():
 
 async def costumedSound():
     globalState.step = "wait"
-    playSound("start2.ogg")
-    await asyncio.sleep(4)
-    playSound("girl_intro2.wav")
-    await asyncio.sleep(8)
+    playSound("costumed.wav")
+    await asyncio.sleep(15)
     globalState.step = "ready"
 
 
@@ -166,6 +164,7 @@ async def attack():
 
 async def attackHit():
     prevStep = globalState.step
+    globalState.totalCharges = 0
     globalState.step = "wait"
     globalState.attacking = False
     playSound("sleep_hit.wav")
