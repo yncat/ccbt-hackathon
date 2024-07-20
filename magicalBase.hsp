@@ -56,10 +56,17 @@ if transfer: gosub*transferMain
 goto *mainloop
 
 *transferMain
+if instr(final_data, 0, " ") == -1: {
+  command = final_data
+  parameters = ""
+}else{
+  split final_data, " ", command, parameter
+}
+
 transfer = 0
-switch final_data
-case "costumed":
-gosub *event_costumed
+switch command
+case "playoneshot":
+gosub *event_playoneshot
 swbreak
 case "playtheme":
 gosub *event_playtheme
@@ -78,8 +85,13 @@ return
 ov_stop 0
 return
 
-*event_costumed
-ov_play 1
+*event_playoneshot
+found = -1
+repeat 50, 101
+if _ov_getstatus(cnt) == 0: found = cnt: break
+loop
+ov_load parameter, found, gf_se
+ov_play found
 return
 
 *transferred
