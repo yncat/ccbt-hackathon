@@ -2,3 +2,4 @@ venv
 *.sfk
 obj
 hsptmp
+*.tmp
