@@ -1,12 +1,10 @@
 import asyncio
 import ctypes
-import time
-import random
-from bleak import BleakClient, discover
-import glob
 import os
+import random
 import struct
-import subprocess
+import time
+from bleak import BleakClient, discover
 
 class IPC:
     def __init__(self):
@@ -25,7 +23,7 @@ class IPC:
 class GlobalState:
     def __init__(self):
         self.timer = time.time()
-        self.step = "waiting"
+        self.step = "wait"
         self.attacking = False
         self.totalCharges = 0
         self.lives = 3
@@ -77,10 +75,11 @@ def cast():
 async def cast1hit():
     globalState.step = "wait"
     ipc.send("chargestopwith fx\\cast_hit1.wav")
-    await asyncio.sleep(7)
+    await asyncio.sleep(5.5)
     globalState.step = "ready2"
     globalState.totalCharges = 0
     globalState.timerRestart()
+    playSound("action.ogg")
 
 async def cast2hit():
     globalState.step = "wait"
@@ -130,6 +129,7 @@ async def costumedSound():
     await asyncio.sleep(5)
     globalState.timerRestart()
     globalState.step = "ready"
+    playSound("action.ogg")
 
 
 def on_receive_indicate(sender, data: bytearray):
@@ -139,6 +139,8 @@ async def introSound():
     playSound("monster_intro1.wav")
     await asyncio.sleep(10)
     playSound("girl_intro1.wav")
+    await asyncio.sleep(10)
+    playSound("action.ogg")
     globalState.step = "not_costumed"
 
 async def scan(prefix='MESH-100'):
@@ -202,12 +204,14 @@ async def attackHit():
         globalState.step = "end"
     elif globalState.lives == 1:
         playSound("girl_hit2.wav")
-        await asyncio.sleep(3)
+        await asyncio.sleep(2.5)
         globalState.step = prevStep
+        playSound("action.ogg")
     elif globalState.lives == 2:
         playSound("girl_hit1.wav")
         await asyncio.sleep(4)
         globalState.step = prevStep
+        playSound("action.ogg")
     globalState.timerRestart()
 
 
