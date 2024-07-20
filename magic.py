@@ -1,14 +1,26 @@
 import asyncio
+import ctypes
 import time
 import random
 from bleak import BleakClient, discover
 import glob
 import os
-from struct import pack
+import struct
 import subprocess
 
-def lucky():
-    return random.randint(1, 20) == 1
+class IPC:
+    def __init__(self):
+        try:
+            with open("hwnd.tmp", "rb") as f:
+                self.hwnd = struct.unpack("L", f.read())[0]
+        except BaseException as e:
+            raise RuntimeError("hwnd.tmp を読めません、 Magical Base を起動してますか？ %s" % e)
+
+    def send(self, command):
+        command = command.encode("UTF-8")
+        commandPointer = ctypes.cast(ctypes.create_string_buffer(command), ctypes.c_void_p)
+        copydatastruct = struct.pack("LLP", 0, len(command), commandPointer.value)
+        ctypes.windll.user32.SendMessageW(self.hwnd, 0x004A, 0, copydatastruct)
 
 class GlobalState:
     def __init__(self):
@@ -24,8 +36,12 @@ class GlobalState:
     def timerElapsed(self):
         return time.time() - self.timer
 
+def lucky():
+    return random.randint(1, 20) == 1
+
 
 globalState = GlobalState()
+ipc = IPC()
 
 # UUID
 CORE_INDICATE_UUID = ('72c90005-57a9-4d40-b746-534e22ec9f9e')
@@ -138,7 +154,7 @@ async def main():
         # Initialize
         await client.start_notify(CORE_NOTIFY_UUID, on_receive_notify)
         await client.start_notify(CORE_INDICATE_UUID, on_receive_indicate)
-        await client.write_gatt_char(CORE_WRITE_UUID, pack('<BBBB', 0, 2, 1, 3), response=True)
+        await client.write_gatt_char(CORE_WRITE_UUID, struct.pack('<BBBB', 0, 2, 1, 3), response=True)
         print('connected')
 
         while(True):
