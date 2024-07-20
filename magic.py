@@ -204,7 +204,7 @@ async def attackHit():
         globalState.step = "end"
     elif globalState.lives == 1:
         playSound("girl_hit2.wav")
-        await asyncio.sleep(2.5)
+        await asyncio.sleep(2)
         globalState.step = prevStep
         playSound("action.ogg")
     elif globalState.lives == 2:
