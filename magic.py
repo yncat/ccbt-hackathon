@@ -58,6 +58,8 @@ EVENT_TYPE_ID = 0
 def on_receive_notify(sender, data: bytearray):
     message_type = data[MESSAGE_TYPE_INDEX]
     event_type = data[EVENT_TYPE_INDEX]
+    if event_type == 1:
+        charge()
     if event_type == 3:
         if data[2] == 3:
             cast()
