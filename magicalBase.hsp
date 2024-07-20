@@ -1,15 +1,86 @@
 #include "ovplay.as"
+#include "kernel32.as"
+#include "user32.as"
 
-title "Magical Base"
+#module alreadyRunningChecker;---------アプリケーションの起動チェックを行うモジュール----------
+#define ERROR_ALREADY_EXISTS    183
+; ミューテックスオブジェクトの名前の定義
+#define global MUTEX_NAME  "MAHOUSHOUJODANYAN"
+; このアプリケーションがすでに起動されているかどうかを取得する関数
+#defcfunc AlreadyRunning
+if (hMutex == 0) {
+; 名前付きミューテックスオブジェクトの作成
+hMutex = CreateMutex(0, 0, MUTEX_NAME)
+; オブジェクトがすでに作成されていたかどうかの判別
+if (GetLastError() == ERROR_ALREADY_EXISTS) {
+; すでに同じ名前のオブジェクトが存在する
+alreadyRunningStatus = 1
+} else {
+; オブジェクトが新しく作成された
+alreadyRunningStatus = 0
+}
+}
+return alreadyRunningStatus
+
+; クリーンアップ処理（終了時に自動実行）
+#deffunc CleanupAppRunChecker onexit
+if (hMutex != 0) {
+; ミューテックスオブジェクトハンドルのクローズ
+CloseHandle hMutex
+hMutex = 0
+}
+return
+#global ;------------------------モジュール終わり-------------------------
+
+if alreadyRunning() {
+  goto*cmdtransfer
+}
+
+windowTitle = "Magical Base"
+title windowTitle
+
+windowHandle = hwnd
+bsave "hwnd.tmp", windowHandle
 
 onexit *exit
 ov_init 44100, 2, 16, 1024
 ov_load "fx\\theme_loop.ogg", 0, gf_bgm
+ov_load "fx\\start2.ogg", 1, GF_SE
 
 
 oncmd gosub *transferred,0x004A	//WM_COPYDATA
-gosub *event_bgm
-stop
+
+*mainloop
+await 16
+if transfer: gosub*transferMain
+goto *mainloop
+
+*transferMain
+transfer = 0
+switch final_data
+case "costumed":
+gosub *event_costumed
+swbreak
+case "playtheme":
+gosub *event_playtheme
+swbreak
+case "stoptheme"
+gosub*event_stoptheme
+swbreak
+swend
+return
+
+*event_playtheme
+ov_bloop 0, 0, 48000.0 * 23.55, -1, -1
+return
+
+*event_stoptheme
+ov_stop 0
+return
+
+*event_costumed
+ov_play 1
+return
 
 *transferred
 dupptr received,lparam,12	//COPYDATASTRUCT構造体。4*3=12バイト
@@ -22,10 +93,20 @@ memcpy final_data,data,size	//ローカルの変数にコピー
 transfer=1		//フラグ立て
 return 1			//メッセージを処理した場合は1を返す
 
-*event_bgm
-ov_bloop 0, 0, 48000.0 * 23.55, -1, -1
-return
-
 *exit
 ov_finalize
 end
+
+*cmdtransfer//多重起動処理
+if dir_cmdline="":end//コマンドラインが空だったら何もしない
+
+s=0
+bload "hwnd.tmp", s
+if s == 0: return
+send_content = dir_cmdline
+dim cds,3//構造体の作成
+cds(0)=0
+cds(1)=strlen(send_content)
+cds(2)=varptr(send_content)
+sendmsg s, 0x004A, hwnd, varptr(cds)		//WM_COPYDATAで中身を送信して
+end//消える
