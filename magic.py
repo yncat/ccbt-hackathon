@@ -27,6 +27,7 @@ class GlobalState:
         self.attacking = False
         self.totalCharges = 0
         self.lives = 3
+        self.cleared = False
 
     def timerRestart(self):
         self.timer = time.time()
@@ -82,6 +83,7 @@ async def cast1hit():
     playSound("action.ogg")
 
 async def cast2hit():
+    globalState.cleared  = True
     globalState.step = "wait"
     ipc.send("chargestopwith fx\\cast_hit2.wav")
     await asyncio.sleep(3)
@@ -92,16 +94,19 @@ async def cast2hit():
     else:
         playSound("monster_defeat1.wav")
     await asyncio.sleep(7)
-    if lucky():
-        playSound("girl_win1_blooper.wav")
-        await asyncio.sleep(15)
-        playSound("outro.wav")
-        await asyncio.sleep(21)
+    # 相打ちになっているときは寝ている
+    if globalState.lives == 0:
+        playSound("girl_end_asleep.wav")
+        await asyncio.sleep(3)
     else:
-        playSound("girl_win2.wav")
-        await asyncio.sleep(7)
-        playSound("outro.wav")
-        await asyncio.sleep(21)
+        if lucky():
+            playSound("girl_win1_blooper.wav")
+            await asyncio.sleep(15)
+        else:
+            playSound("girl_win2.wav")
+            await asyncio.sleep(7)
+    playSound("outro.wav")
+    await asyncio.sleep(21)
     globalState.step = "end"
 
 def charge():
@@ -201,7 +206,8 @@ async def attackHit():
     if globalState.lives == 0:
         playSound("girl_defeat1.wav")
         await asyncio.sleep(5)
-        globalState.step = "end"
+        if not globalState.cleared: # 相打ちになっているときはネタを発動させるので例外的にフラグを立てない。撃破したほうのイベントでフラグが立つように。
+            globalState.step = "end"
     elif globalState.lives == 1:
         playSound("girl_hit2.wav")
         await asyncio.sleep(2)
