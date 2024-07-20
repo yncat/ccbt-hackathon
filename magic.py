@@ -203,7 +203,7 @@ async def attackHit():
 
 def playSound(name):
     name = os.path.join(os.getcwd(), "fx", name)
-    subprocess.run(["lamp.exe", name])
+    ipc.send("playoneshot %s" % name)
 
 def onConnected():
     pass
