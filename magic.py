@@ -65,6 +65,8 @@ def on_receive_notify(sender, data: bytearray):
             charge()
 
 def cast():
+    if globalState.totalCharges <= 0:
+        return
     if globalState.step == "ready":
         globalState.attacking = False
         loop = asyncio.get_event_loop()
@@ -212,12 +214,14 @@ async def attackHit():
         playSound("girl_hit2.wav")
         await asyncio.sleep(2)
         globalState.step = prevStep
-        playSound("action.ogg")
+        if not globalState.cleared:
+            playSound("action.ogg")
     elif globalState.lives == 2:
         playSound("girl_hit1.wav")
         await asyncio.sleep(4)
         globalState.step = prevStep
-        playSound("action.ogg")
+        if not globalState.cleared:
+            playSound("action.ogg")
     globalState.timerRestart()
 
 
