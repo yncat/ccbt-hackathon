@@ -25,7 +25,7 @@ class IPC:
 class GlobalState:
     def __init__(self):
         self.timer = time.time()
-        self.step = "not_costumed"
+        self.step = "waiting"
         self.attacking = False
         self.totalCharges = 0
         self.lives = 3
@@ -76,7 +76,7 @@ def cast():
 
 async def cast1hit():
     globalState.step = "wait"
-    playSound("cast_hit1.wav")
+    ipc.send("chargestopwith fx\\cast_hit1.wav")
     await asyncio.sleep(7)
     globalState.step = "ready2"
     globalState.totalCharges = 0
@@ -84,8 +84,10 @@ async def cast1hit():
 
 async def cast2hit():
     globalState.step = "wait"
-    playSound("cast_hit2.wav")
-    await asyncio.sleep(6)
+    ipc.send("chargestopwith fx\\cast_hit2.wav")
+    await asyncio.sleep(3)
+    ipc.send("fadeouttheme")
+    await asyncio.sleep(3)
     if lucky():
         playSound("monster_defeat_blooper.wav")
     else:
@@ -108,9 +110,9 @@ def charge():
         return
     globalState.totalCharges += 1
     if globalState.step == "ready" and globalState.totalCharges == 1:
-        playSound("ready.wav")
+        ipc.send("charged")
     if globalState.step == "ready2" and globalState.totalCharges == 1:
-        playSound("ready.wav")
+        ipc.send("charged")
     print("Charge %d!" % globalState.totalCharges)
     if globalState.step == "not_costumed" and globalState.totalCharges >= 5:
         globalState.step = "costumed"
@@ -120,8 +122,13 @@ def charge():
 
 async def costumedSound():
     globalState.step = "wait"
-    playSound("costumed.wav")
-    await asyncio.sleep(15)
+    ipc.send("playtheme")
+    await asyncio.sleep(3)
+    ipc.send("costumed")
+    await asyncio.sleep(4)
+    playSound("girl_intro2.wav")
+    await asyncio.sleep(5)
+    globalState.timerRestart()
     globalState.step = "ready"
 
 
@@ -132,6 +139,7 @@ async def introSound():
     playSound("monster_intro1.wav")
     await asyncio.sleep(10)
     playSound("girl_intro1.wav")
+    globalState.step = "not_costumed"
 
 async def scan(prefix='MESH-100'):
     while True:
@@ -183,9 +191,11 @@ async def attackHit():
     globalState.totalCharges = 0
     globalState.step = "wait"
     globalState.attacking = False
-    playSound("sleep_hit.wav")
-    await asyncio.sleep(3)
     globalState.lives -= 1
+    ipc.send("chargestopwith fx\\sleep_hit.wav")
+    if globalState.lives == 0:
+        ipc.send("fadeouttheme")
+    await asyncio.sleep(3)
     if globalState.lives == 0:
         playSound("girl_defeat1.wav")
         await asyncio.sleep(5)
