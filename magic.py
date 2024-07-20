@@ -26,6 +26,7 @@ class GlobalState:
         self.step = "wait"
         self.attacking = False
         self.totalCharges = 0
+        self.maxCharges = 0
         self.lives = 3
         self.cleared = False
 
@@ -83,6 +84,7 @@ async def cast1hit():
     await asyncio.sleep(5.5)
     globalState.step = "ready2"
     globalState.totalCharges = 0
+    globalState.maxCharges = 13
     globalState.timerRestart()
     playSound("action.ogg")
 
@@ -114,15 +116,17 @@ async def cast2hit():
     globalState.step = "end"
 
 def charge():
+    if globalState.totalCharges >= globalState.maxCharges:
+        return
     if globalState.step == "costumed" or globalState.step == "wait":
         return
     globalState.totalCharges += 1
-    if globalState.step == "ready" and globalState.totalCharges == 1:
+    ipc.send("charge %d" % globalState.totalCharges)
+    if globalState.step == "ready" and globalState.totalCharges == globalState.maxCharges:
         ipc.send("charged")
-    if globalState.step == "ready2" and globalState.totalCharges == 1:
+    if globalState.step == "ready2" and globalState.totalCharges == globalState.maxCharges:
         ipc.send("charged")
-    print("Charge %d!" % globalState.totalCharges)
-    if globalState.step == "not_costumed" and globalState.totalCharges >= 5:
+    if globalState.step == "not_costumed" and globalState.totalCharges == globalState.maxCharges:
         globalState.step = "costumed"
         globalState.totalCharges = 0
         loop = asyncio.get_event_loop()
@@ -138,6 +142,7 @@ async def costumedSound():
     await asyncio.sleep(5)
     globalState.timerRestart()
     globalState.step = "ready"
+    globalState.maxCharges = 8
     playSound("action.ogg")
 
 
@@ -151,6 +156,7 @@ async def introSound():
     await asyncio.sleep(10)
     playSound("action.ogg")
     globalState.step = "not_costumed"
+    globalState.maxCharges = 5
 
 async def scan(prefix='MESH-100'):
     while True:

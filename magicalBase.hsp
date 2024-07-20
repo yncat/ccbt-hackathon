@@ -1,3 +1,4 @@
+#include "bsplay.as"
 #include "ovplay.as"
 #include "kernel32.as"
 #include "user32.as"
@@ -32,6 +33,15 @@ hMutex = 0
 return
 #global ;------------------------モジュール終わり-------------------------
 
+#module
+#defcfunc getFreeBassBuffer
+found = -1
+repeat 50
+if _bs_getstatus(cnt) == 0: found = cnt: break
+loop
+return found
+#global
+
 if alreadyRunning() {
   goto*cmdtransfer
 }
@@ -43,7 +53,8 @@ windowHandle = hwnd
 bsave "hwnd.tmp", windowHandle
 
 onexit *exit
-ov_init 44100, 2, 16, 1024
+bs_init 44100, 16, 1, 128
+ov_init 44100, 2, 16, 128
 ov_load "fx\\theme_loop.ogg", 0, gf_bgm
 ov_load "fx\\start2.ogg", 1, GF_SE
 ov_load "fx\\ready.wav", 2, gf_se
@@ -57,13 +68,14 @@ if transfer: gosub*transferMain
 goto *mainloop
 
 *transferMain
-if instr(final_data, 0, " ") == -1: {
+spacePos = instr(final_data, 0, " ")
+if spacePos == -1: {
   command = final_data
-  parameters = ""
+  parameter = ""
 }else{
-  split final_data, " ", command, parameter
+  command = strmid(final_data, 0, spacePos)
+  parameter = strmid(final_data, spacePos + 1, 10000)
 }
-
 transfer = 0
 switch command
 case "playoneshot":
@@ -86,6 +98,9 @@ ov_play 2
 swbreak
 case "chargestopwith"
 gosub*event_chargestopwith
+swbreak
+case "charge"
+gosub*event_charge
 swbreak
 swend
 return
@@ -144,6 +159,28 @@ loop
 ov_load parameter, found, gf_se
 ov_play found
 ov_stop 2
+return
+
+*event_charge
+level = int(parameter)
+if level > 0 {
+  pitch = 65 + (level * 4)
+  if pitch >=180: pitch = 180
+  found = getFreeBassBuffer()
+  bs_load "fx\\charge_st1", found, BS_SAMPLE
+  bs_setPitch found, pitch
+  bs_setvolume found, -2000
+  bs_play found
+}
+if level > 30 {
+  pitch = 65 + (level * 4)
+  if pitch >=180: pitch = 180
+  found = getFreeBassBuffer()
+  bs_load "fx\\charge_st2", found, BS_SAMPLE
+  bs_setvolume found, -2000
+  bs_setPitch found, pitch
+  bs_play found
+}
 return
 
 *transferred
