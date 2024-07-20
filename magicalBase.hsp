@@ -1,0 +1,31 @@
+#include "ovplay.as"
+
+title "Magical Base"
+
+onexit *exit
+ov_init 44100, 2, 16, 1024
+ov_load "fx\\theme_loop.ogg", 0, gf_bgm
+
+
+oncmd gosub *transferred,0x004A	//WM_COPYDATA
+gosub *event_bgm
+stop
+
+*transferred
+dupptr received,lparam,12	//COPYDATASTRUCT構造体。4*3=12バイト
+size=lpeek(received,4)	//COPYDATASTRUCT.2を取り出し。サイズ(バイト)
+ptr=lpeek(received,8)	//COPYDATASTRUCT.3を取り出し。文字列へのポインタ
+dupptr data,ptr,size	//文字列データを入手
+final_data=""
+sdim final_data,size+1	//領域確保
+memcpy final_data,data,size	//ローカルの変数にコピー
+transfer=1		//フラグ立て
+return 1			//メッセージを処理した場合は1を返す
+
+*event_bgm
+ov_bloop 0, 0, 48000.0 * 23.55, -1, -1
+return
+
+*exit
+ov_finalize
+end
