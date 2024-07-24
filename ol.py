@@ -100,7 +100,7 @@ def on_motion_receive_notify(sender, data: bytearray):
             charge()
 
 def cast():
-    if globalState.totalCharges <= globalState.maxCharges:
+    if globalState.totalCharges < globalState.maxCharges:
         return
     if globalState.step == "ready":
         globalState.attacking = False

@@ -166,10 +166,10 @@ return
 *event_charge
 level = int(parameter)
 if level > 0 {
-  pitch = 65 + (level * 4)
+  pitch = 80 + (level * 4)
   if pitch >=180: pitch = 180
   found = getFreeBassBuffer()
-  bs_load "fx\\charge_st1", found, BS_SAMPLE
+  bs_load "fx\\spell", found, BS_SAMPLE
   bs_setPitch found, pitch
   bs_setvolume found, -2000
   bs_play found
