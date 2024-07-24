@@ -287,9 +287,6 @@ def playSound(name):
     name = os.path.join(os.getcwd(), "fx", name)
     ipc.send("playoneshot %s" % name)
 
-def onConnected():
-    pass
-
 # Initialize event loop
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()

@@ -3,6 +3,8 @@
 #include "kernel32.as"
 #include "user32.as"
 
+#packopt name "ol_heart"
+
 #module alreadyRunningChecker;---------アプリケーションの起動チェックを行うモジュール----------
 #define ERROR_ALREADY_EXISTS    183
 ; ミューテックスオブジェクトの名前の定義
@@ -46,7 +48,7 @@ if alreadyRunning() {
   goto*cmdtransfer
 }
 
-windowTitle = "Magical Base"
+windowTitle = "OL Heart!"
 title windowTitle
 
 windowHandle = hwnd
