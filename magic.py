@@ -22,8 +22,11 @@ class IPC:
 
 class GlobalState:
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self.timer = time.time()
-        self.step = "wait"
+        self.step = "welcome"
         self.attacking = False
         self.totalCharges = 0
         self.maxCharges = 0
@@ -178,7 +181,11 @@ def on_motion_receive_indicate(sender, data: bytearray):
     pass
 
 def on_button_receive_notify(sender, data: bytearray):
-    print("on_button_receive_notify")
+    if globalState.step != "welcome":
+        return
+    # end if
+    if data[2] == 1:
+        globalState.step = "start"
 
 def on_button_receive_indicate(sender, data: bytearray):
     pass
@@ -213,7 +220,16 @@ async def main():
             print("Mahou Shoujo, Ready!")
             await game()
 
+
 async def game():
+    while(True):
+        globalState.reset()
+        while(globalState.step == "welcome"):
+            await asyncio.sleep(0.1)
+        # end wait until button is pressed and state changes
+        await play()
+
+async def play():
     # intro sound
     loop = asyncio.get_event_loop()
     loop.create_task(introSound())
