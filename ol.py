@@ -99,10 +99,10 @@ EVENT_TYPE_ID = 0
 def on_motion_receive_notify(sender, data: bytearray):
     message_type = data[MESSAGE_TYPE_INDEX]
     event_type = data[EVENT_TYPE_INDEX]
-    if event_type == 1:
+    if event_type == 1: # Shake event
         charge()
-    if event_type == 3:
-        if data[2] == 3:
+    if event_type == 3: # orientation event
+        if data[2] == 3: # face up
             cast()
         else:
             charge()
@@ -192,7 +192,7 @@ def on_button_receive_notify(sender, data: bytearray):
     if globalState.step != "welcome":
         return
     # end if
-    if data[2] == 1:
+    if data[2] == 1: # single pressed event
         globalState.step = "start"
 
 def on_button_receive_indicate(sender, data: bytearray):

@@ -8,7 +8,7 @@
 #module alreadyRunningChecker;---------アプリケーションの起動チェックを行うモジュール----------
 #define ERROR_ALREADY_EXISTS    183
 ; ミューテックスオブジェクトの名前の定義
-#define global MUTEX_NAME  "MAHOUSHOUJODANYAN"
+#define global MUTEX_NAME  "MAHOUSHOUJOAZUSA"
 ; このアプリケーションがすでに起動されているかどうかを取得する関数
 #defcfunc AlreadyRunning
 if (hMutex == 0) {
