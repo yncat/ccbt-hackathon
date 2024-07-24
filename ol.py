@@ -6,6 +6,14 @@ import struct
 import time
 from bleak import BleakClient, BleakScanner
 
+print("Mahou Shoujo OL Version: 1.0.0")
+print("Programmed by Yukio Nozawa, Voice acted by Azusa Miyamura and Ryota Suzuki")
+print("Sound designed by Yukio Nozawa, graphic designed by Azusa Miyamura")
+print("Rod designed by Azusa Miyamura, Character designed by Azusa Miyamura and Ryota Suzuki")
+print("Main theme by Suno AI")
+print("Copyright 2024 Yukio Nozawa, Azusa Miyamura and Ryota Suzuki")
+print("Enjoy!")
+
 class IPC:
     def __init__(self):
         try:
