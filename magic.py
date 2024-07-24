@@ -4,7 +4,7 @@ import os
 import random
 import struct
 import time
-from bleak import BleakClient, discover
+from bleak import BleakClient, BleakScanner
 
 class IPC:
     def __init__(self):
@@ -40,6 +40,35 @@ def lucky():
     return random.randint(1, 20) == 1
 
 
+class DeviceScanner:
+    def __init__(self):
+        self.motionDevice = None
+        self.buttonDevice = None
+
+    async def scanDevices(self):
+        async with BleakScanner(detection_callback=self.onDeviceDetected) as scanner:
+            for i in range(30):
+                await asyncio.sleep(1)
+                if self.motionDevice is not None and self.buttonDevice is not None:
+                    break
+                # end if
+            # end for
+        # end with scan
+        if self.motionDevice is None or self.buttonDevice is None:
+            raise RuntimeError("デバイスが見つかりませんでした。電源が入っているか確認してください。 モーション = %s, ボタン = %s" % (self.motionDevice, self.buttonDevice))
+
+    def onDeviceDetected(self, device, advertising_data):
+        if device.name is None:
+            return
+        # end unnamed device
+        if self.motionDevice is None and device.name.startswith("MESH-100AC"): # motion
+            self.motionDevice = device
+            print("motion device found")
+        if self.buttonDevice is None and device.name.startswith("MESH-100BU"): # button
+            self.buttonDevice = device
+            print("button device found")
+
+
 globalState = GlobalState()
 ipc = IPC()
 
@@ -56,7 +85,7 @@ MESSAGE_TYPE_ID = 1
 EVENT_TYPE_ID = 0
 
 # Callback
-def on_receive_notify(sender, data: bytearray):
+def on_motion_receive_notify(sender, data: bytearray):
     message_type = data[MESSAGE_TYPE_INDEX]
     event_type = data[EVENT_TYPE_INDEX]
     if event_type == 1:
@@ -145,9 +174,14 @@ async def costumedSound():
     globalState.maxCharges = 8
     playSound("action.ogg")
 
+def on_motion_receive_indicate(sender, data: bytearray):
+    pass
 
-def on_receive_indicate(sender, data: bytearray):
-    print("on_receive_indicate")
+def on_button_receive_notify(sender, data: bytearray):
+    print("on_button_receive_notify")
+
+def on_button_receive_indicate(sender, data: bytearray):
+    pass
 
 async def introSound():
     playSound("monster_intro1.wav")
@@ -158,40 +192,40 @@ async def introSound():
     globalState.step = "not_costumed"
     globalState.maxCharges = 5
 
-async def scan(prefix='MESH-100'):
-    while True:
-        print('scan...')
-        try:
-            return next(d for d in await discover() if d.name and d.name.startswith(prefix))
-        except StopIteration:
-            continue
-
 async def main():
+    print("Scanning devices...")
+    scanner = DeviceScanner()
+    await scanner.scanDevices()
+    async with BleakClient(scanner.motionDevice, timeout=None) as client:
+        print("connecting to motion device...")
+        # Initialize
+        await client.start_notify(CORE_NOTIFY_UUID, on_motion_receive_notify)
+        await client.start_notify(CORE_INDICATE_UUID, on_motion_receive_indicate)
+        await client.write_gatt_char(CORE_WRITE_UUID, struct.pack('<BBBB', 0, 2, 1, 3), response=True)
+        print('connected to motion device')
+        async with BleakClient(scanner.buttonDevice, timeout=None) as client:
+            print("connecting to button device...")
+            # Initialize
+            await client.start_notify(CORE_NOTIFY_UUID, on_button_receive_notify)
+            await client.start_notify(CORE_INDICATE_UUID, on_button_receive_indicate)
+            await client.write_gatt_char(CORE_WRITE_UUID, struct.pack('<BBBB', 0, 2, 1, 3), response=True)
+            print('connected to button device')
+            print("Mahou Shoujo, Ready!")
+            await game()
+
+async def game():
     # intro sound
     loop = asyncio.get_event_loop()
     loop.create_task(introSound())
-    # Scan device
-    device = await scan('MESH-100AC')
-    print('found', device.name, device.address)
+    while(True):
+        await asyncio.sleep(1)
+        if globalState.step == "ready" or globalState.step == "ready2":
+            attackCheck()
+        if globalState.attacking and globalState.timerElapsed() >= 1:
+            loop.create_task(attackHit())
+        if globalState.step == "end":
+            break
 
-    # Connect device
-    async with BleakClient(device, timeout=None) as client:
-        # Initialize
-        await client.start_notify(CORE_NOTIFY_UUID, on_receive_notify)
-        await client.start_notify(CORE_INDICATE_UUID, on_receive_indicate)
-        await client.write_gatt_char(CORE_WRITE_UUID, struct.pack('<BBBB', 0, 2, 1, 3), response=True)
-        print('connected')
-
-        while(True):
-            await asyncio.sleep(1)
-            if globalState.step == "ready" or globalState.step == "ready2":
-                attackCheck()
-            if globalState.attacking and globalState.timerElapsed() >= 1:
-                loop.create_task(attackHit())
-            if globalState.step == "end":
-                break
-
-        # Finish
 
 def attackCheck():
     if globalState.timerElapsed() > 10:
@@ -242,7 +276,5 @@ def onConnected():
 
 # Initialize event loop
 if __name__ == '__main__':
-    totalCharges = 0
-    casted = False
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
