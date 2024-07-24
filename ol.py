@@ -20,7 +20,7 @@ class IPC:
             with open("hwnd.tmp", "rb") as f:
                 self.hwnd = struct.unpack("L", f.read())[0]
         except BaseException as e:
-            raise RuntimeError("hwnd.tmp を読めません、 Magical Base を起動してますか？ %s" % e)
+            raise RuntimeError("hwnd.tmp を読めません、 ol_heart を起動してますか？ %s" % e)
 
     def send(self, command):
         command = command.encode("UTF-8")
