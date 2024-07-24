@@ -3,3 +3,6 @@ venv
 obj
 hsptmp
 *.tmp
+start.ax
+packfile
+hsptmp
