@@ -124,7 +124,7 @@ async def cast1hit():
     await asyncio.sleep(5.5)
     globalState.step = "ready2"
     globalState.totalCharges = 0
-    globalState.maxCharges = 13
+    globalState.maxCharges = 111
     globalState.timerRestart()
     playSound("action.ogg")
 
