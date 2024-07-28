@@ -112,7 +112,7 @@ def cast():
         return
     if globalState.step == "ready":
         globalState.attacking = False
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         loop.create_task(cast1hit())
     if globalState.step == "ready2":
         loop = asyncio.get_event_loop()
@@ -169,7 +169,7 @@ def charge():
     if globalState.step == "not_costumed" and globalState.totalCharges == globalState.maxCharges:
         globalState.step = "costumed"
         globalState.totalCharges = 0
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         loop.create_task(costumedSound())
 
 async def costumedSound():
@@ -239,7 +239,7 @@ async def game():
 
 async def play():
     # intro sound
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     loop.create_task(introSound())
     while(True):
         await asyncio.sleep(1)
@@ -253,7 +253,7 @@ async def play():
 
 def attackCheck():
     if globalState.timerElapsed() > 10:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         loop.create_task(attack())
 
 async def attack():
@@ -297,5 +297,4 @@ def playSound(name):
 
 # Initialize event loop
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    asyncio.run(main())
