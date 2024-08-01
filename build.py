@@ -8,8 +8,15 @@ import zipfile
 with open('version.txt', 'r') as f:
     version = f.read().strip()
 
-# ディレクトリを作成
 dir = f'dist/ol_{version}'
+
+# すでに同じバージョンのビルドがあれば削除
+if os.path.exists(f'{dir}.zip'):
+    os.remove(f'{dir}.zip')
+if os.path.isdir(dir):
+    shutil.rmtree(dir)
+
+# ディレクトリを作成
 os.makedirs(dir, exist_ok=True)
 
 # 必要なファイルをコピー
@@ -34,6 +41,6 @@ shutil.copytree('fx', f'{dir}/fx')
 with zipfile.ZipFile(f'dist/ol_{version}.zip', 'w', zipfile.ZIP_DEFLATED) as new_zip:
     for root, dirs, files in os.walk(dir):
         for file in files:
-            new_zip.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), dir))
+            new_zip.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), "dist"))
 
 print("Built ol_" + version + ".zip")
