@@ -217,7 +217,25 @@ async def introSound():
     globalState.step = "not_costumed"
     globalState.maxCharges = 5
 
+
 async def main():
+    print("Scanning devices...")
+    scanner = DeviceScanner()
+    await scanner.scanDevices()
+    async with BleakClient(scanner.motionDevice, timeout=None) as client:
+        print("connecting to motion device...")
+        # Initialize
+        await client.start_notify(CORE_NOTIFY_UUID, on_motion_receive_notify)
+        await client.start_notify(CORE_INDICATE_UUID, on_motion_receive_indicate)
+        await client.write_gatt_char(CORE_WRITE_UUID, struct.pack('<BBBB', 0, 2, 1, 3), response=True)
+        print('connected to motion device')
+        async with BleakClient(scanner.buttonDevice, timeout=None) as client:
+            print("connecting to button device...")
+            # Initialize
+            await client.start_notify(CORE_NOTIFY_UUID, on_button_receive_notify)
+            await client.start_notify(CORE_INDICATE_UUID, on_button_receive_indicate)
+            await client.write_gatt_char(CORE_WRITE_UUID, struct.pack('<BBBB', 0, 2, 1, 3), response=True)
+            print('connected to button device')
             print("Mahou Shoujo, Ready!")
             await game()
 
@@ -225,8 +243,11 @@ async def main():
 async def game():
     while(True):
         globalState.reset()
+        while(globalState.step == "welcome"):
+            await asyncio.sleep(0.1)
         # end wait until button is pressed and state changes
         await play()
+
 
 async def play():
     # intro sound
@@ -234,10 +255,6 @@ async def play():
     loop.create_task(introSound())
     while(True):
         await asyncio.sleep(1)
-        if globalState.totalCharges == globalState.maxCharges:
-            cast()
-        else:
-            charge()
         if globalState.step == "ready" or globalState.step == "ready2":
             attackCheck()
         if globalState.attacking and globalState.timerElapsed() >= 1:
