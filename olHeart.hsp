@@ -60,7 +60,8 @@ ov_init 44100, 2, 16, 128
 ov_load "fx\\theme_loop.ogg", 0, gf_bgm
 ov_load "fx\\start2.ogg", 1, GF_SE
 ov_load "fx\\ready.wav", 2, gf_se
-
+// 3: girl
+ov_load "fx\\office.ogg", 4, GF_BGM
 
 oncmd gosub *transferred,0x004A	//WM_COPYDATA
 
@@ -97,6 +98,12 @@ gosub*event_fadeouttheme
 swbreak
 case "costumed"
 gosub*event_costumed
+swbreak
+case "playoffice"
+gosub*event_playoffice
+swbreak
+case "fadeoutoffice"
+gosub*event_fadeoutoffice
 swbreak
 case "charged"
 ov_play 2
@@ -207,6 +214,24 @@ if level > 30 {
   bs_setPitch found, pitch
   bs_play found
 }
+return
+
+*event_playoffice
+ov_setvolume 4, 0
+ov_loop 4
+return
+
+*event_fadeoutoffice
+v2=1
+repeat 
+v-=v2
+if v<=-8000:ov_stop 0:break
+ov_setvolume 0,v
+v2+=1
+if v2>150:v2+=100
+wait 2
+loop
+ov_stop 0
 return
 
 *transferred

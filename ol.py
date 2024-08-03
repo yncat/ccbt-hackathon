@@ -210,6 +210,7 @@ def on_button_receive_indicate(sender, data: bytearray):
 
 async def introSound():
     playSound("monster_intro1.wav")
+    ipc.send("fadeoutoffice")
     await asyncio.sleep(10)
     girlSays("girl_intro1.wav")
     await asyncio.sleep(10)
@@ -219,32 +220,21 @@ async def introSound():
 
 
 async def main():
-    print("Scanning devices...")
-    scanner = DeviceScanner()
-    await scanner.scanDevices()
-    async with BleakClient(scanner.motionDevice, timeout=None) as client:
-        print("connecting to motion device...")
-        # Initialize
-        await client.start_notify(CORE_NOTIFY_UUID, on_motion_receive_notify)
-        await client.start_notify(CORE_INDICATE_UUID, on_motion_receive_indicate)
-        await client.write_gatt_char(CORE_WRITE_UUID, struct.pack('<BBBB', 0, 2, 1, 3), response=True)
-        print('connected to motion device')
-        async with BleakClient(scanner.buttonDevice, timeout=None) as client:
-            print("connecting to button device...")
-            # Initialize
-            await client.start_notify(CORE_NOTIFY_UUID, on_button_receive_notify)
-            await client.start_notify(CORE_INDICATE_UUID, on_button_receive_indicate)
-            await client.write_gatt_char(CORE_WRITE_UUID, struct.pack('<BBBB', 0, 2, 1, 3), response=True)
-            print('connected to button device')
-            print("Mahou Shoujo, Ready!")
-            await game()
+    print("Mahou Shoujo, Ready!")
+    await game()
 
 
 async def game():
     while(True):
         globalState.reset()
+        ipc.send("playoffice")
+        count = 0
         while(globalState.step == "welcome"):
             await asyncio.sleep(0.1)
+            count += 1
+            if count == 100:
+                girlSays("girl_pressbutton.wav")
+                count = 0
         # end wait until button is pressed and state changes
         await play()
 
