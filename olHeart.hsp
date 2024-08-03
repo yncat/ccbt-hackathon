@@ -83,6 +83,9 @@ switch command
 case "playoneshot":
 gosub *event_playoneshot
 swbreak
+case "girl":
+gosub *event_girl
+swbreak
 case "playtheme":
 gosub *event_playtheme
 swbreak
@@ -100,6 +103,9 @@ ov_play 2
 swbreak
 case "chargestopwith"
 gosub*event_chargestopwith
+swbreak
+case "chargehitwith"
+gosub*event_chargehitwith
 swbreak
 case "charge"
 gosub*event_charge
@@ -139,6 +145,11 @@ ov_load parameter, found, gf_se
 ov_play found
 return
 
+*event_girl
+ov_load parameter, 3, gf_se
+ov_play 3
+return
+
 *event_costumed
 ov_play 1
 v=0
@@ -154,6 +165,19 @@ ov_play 2
 return
 
 *event_chargestopwith
+// chargestopwith makes the girl silent
+found = -1
+repeat 50, 101
+if _ov_getstatus(cnt) == 0: found = cnt: break
+loop
+ov_load parameter, found, gf_se
+ov_play found
+ov_stop 2
+ov_stop 3
+return
+
+*event_chargehitwith
+// chargehitwith doesn't make the girl silent
 found = -1
 repeat 50, 101
 if _ov_getstatus(cnt) == 0: found = cnt: break
