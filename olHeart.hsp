@@ -217,21 +217,27 @@ if level > 30 {
 return
 
 *event_playoffice
-ov_setvolume 4, 0
+office_v = -3000
+ov_setvolume 4, -office_v
 ov_loop 4
+repeat 30
+office_v += 100
+ov_setvolume 4, office_v
+wait 3
+loop
 return
 
 *event_fadeoutoffice
-v2=1
+office_v2=1
 repeat 
-v-=v2
-if v<=-8000:ov_stop 0:break
-ov_setvolume 0,v
-v2+=1
-if v2>150:v2+=100
+office_v-=office_v2
+if office_v<=-8000:ov_stop 4:break
+ov_setvolume 4,office_v
+office_v2+=1
+if office_v2>150:office_v2+=100
 wait 2
 loop
-ov_stop 0
+ov_stop 4
 return
 
 *transferred
