@@ -102,8 +102,8 @@ def on_motion_receive_notify(sender, data: bytearray):
     event_type = data[EVENT_TYPE_INDEX]
     if event_type == 1: # Shake event
         charge()
-        if data[2] in [4, 3]: # face up or down (due to the way the cencors are connected)
     if event_type == 3: # orientation event
+        if data[2] in [4, 3]: # face up or down (due to the way the cencors are connected)
             cast()
         else:
             charge()
